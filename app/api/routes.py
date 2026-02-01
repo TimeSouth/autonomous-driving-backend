@@ -145,7 +145,7 @@ async def get_task_result(
                     relative_path = file_path.replace(settings.LOCAL_RESULT_DIR + "/", "")
                     filename = Path(file_path).name
                     file_ext = Path(file_path).suffix.lower()
-                    file_type = "image" if file_ext in [".jpg", ".jpeg", ".png", ".bmp"] else "video" if file_ext in [".mp4", ".avi", ".mov"] else "other"
+                    file_type = "image" if file_ext in [".jpg", ".jpeg", ".png", ".bmp", ".gif"] else "video" if file_ext in [".mp4", ".avi", ".mov"] else "other"
                     result_files.append({
                         "filename": filename,
                         "type": file_type,
@@ -161,7 +161,7 @@ async def get_task_result(
             for file_path in result_dir.rglob("*"):  # 递归遍历
                 if file_path.is_file():
                     file_ext = file_path.suffix.lower()
-                    file_type = "image" if file_ext in [".jpg", ".jpeg", ".png", ".bmp"] else "video" if file_ext in [".mp4", ".avi", ".mov"] else "other"
+                    file_type = "image" if file_ext in [".jpg", ".jpeg", ".png", ".bmp", ".gif"] else "video" if file_ext in [".mp4", ".avi", ".mov"] else "other"
                     relative_path = file_path.relative_to(result_dir)
                     result_files.append({
                         "filename": file_path.name,
@@ -212,6 +212,7 @@ async def get_result_file(
         ".jpeg": "image/jpeg",
         ".png": "image/png",
         ".bmp": "image/bmp",
+        ".gif": "image/gif",
         ".mp4": "video/mp4",
         ".avi": "video/x-msvideo",
         ".mov": "video/quicktime"

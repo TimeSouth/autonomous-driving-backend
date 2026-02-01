@@ -149,13 +149,14 @@ class SSHService:
         
         start_time = time.time()
         
-        # 构建远程命令
-        # remote_command = (
-        #     f"source ~/.bashrc && "
-        #     f"conda activate {settings.REMOTE_CONDA_ENV} && "
-        #     f"cd {settings.REMOTE_WORK_DIR} && "
-        #     f"bash {settings.REMOTE_SCRIPT} {index}"
-        # )
+        # 构建远程命令（使用 bash -l -c 登录模式加载环境）
+        inner_cmd = (
+            f"source /opt/anaconda3/etc/profile.d/conda.sh && "
+            f"conda activate {settings.REMOTE_CONDA_ENV} && "
+            f"cd {settings.REMOTE_WORK_DIR} && "
+            f"bash {settings.REMOTE_SCRIPT} {index}"
+        )
+        remote_command = f"bash -l -c '{inner_cmd}'"
         
         # 在线程池中执行（避免阻塞事件循环）
         loop = asyncio.get_event_loop()
@@ -188,10 +189,10 @@ class SSHService:
         Returns:
             文件相对路径列表
         """
-        # 使用 find 命令递归查找所有图片文件
+        # 使用 find 命令递归查找所有图片/动图文件
         remote_command = (
             f"find {settings.REMOTE_RESULT_DIR} -type f "
-            f"\\( -name '*.jpg' -o -name '*.jpeg' -o -name '*.png' -o -name '*.bmp' \\) "
+            f"\\( -name '*.jpg' -o -name '*.jpeg' -o -name '*.png' -o -name '*.bmp' -o -name '*.gif' \\) "
             f"2>/dev/null"
         )
         exit_code, stdout, stderr = self.execute_command(remote_command, timeout=30)

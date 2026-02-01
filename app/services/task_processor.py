@@ -65,7 +65,7 @@ async def process_inference_task(task_data: dict):
                     downloaded_files = []
                     if local_result_dir.exists():
                         for file_path in local_result_dir.rglob("*"):
-                            if file_path.is_file() and file_path.suffix.lower() in [".jpg", ".jpeg", ".png", ".bmp"]:
+                            if file_path.is_file() and file_path.suffix.lower() in [".jpg", ".jpeg", ".png", ".bmp", ".gif"]:
                                 downloaded_files.append(str(file_path))
                     logger.info(f"[LOCAL MODE] 跳过下载，直接使用本地路径，找到 {len(downloaded_files)} 个文件")
                 else:
