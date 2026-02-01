@@ -133,12 +133,13 @@ class SSHService:
         
         return exit_code, stdout, stderr
     
-    async def run_inference(self, index: int) -> dict:
+    async def run_inference(self, index: int, subfolder: str) -> dict:
         """
         执行模型推理
         
         Args:
             index: 序号参数
+            subfolder: 子文件夹参数
             
         Returns:
             推理结果字典
@@ -154,7 +155,7 @@ class SSHService:
             f"source /opt/anaconda3/etc/profile.d/conda.sh && "
             f"conda activate {settings.REMOTE_CONDA_ENV} && "
             f"cd {settings.REMOTE_WORK_DIR} && "
-            f"bash {settings.REMOTE_SCRIPT} {index}"
+            f"bash {settings.REMOTE_SCRIPT} {index} {subfolder}"
         )
         remote_command = f"bash -l -c '{inner_cmd}'"
         

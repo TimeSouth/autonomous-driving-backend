@@ -24,6 +24,7 @@ class Task(Base):
     
     # 任务参数
     index = Column(Integer, nullable=False)  # 序号参数
+    subfolder = Column(String(64), nullable=True)  # 子文件夹参数
     
     # 任务状态
     status = Column(Enum(TaskStatus), default=TaskStatus.PENDING, nullable=False)
@@ -47,4 +48,4 @@ class Task(Base):
     user_agent = Column(String(512), nullable=True)
     
     def __repr__(self):
-        return f"<Task(task_id={self.task_id}, index={self.index}, status={self.status})>"
+        return f"<Task(task_id={self.task_id}, index={self.index}, subfolder={self.subfolder}, status={self.status})>"

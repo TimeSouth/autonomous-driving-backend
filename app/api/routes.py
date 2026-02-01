@@ -33,18 +33,20 @@ def get_client_info(request: Request) -> dict:
 async def submit_inference(
     request: Request,
     index: int = Query(..., ge=1, description="序号参数"),
+    subfolder: str = Query(..., description="子文件夹参数，如 00000"),
     db: AsyncSession = Depends(get_db)
 ):
     """
     提交推理任务
     
-    - 接收序号参数
+    - 接收序号参数和子文件夹参数
     - 创建任务记录
     - 将任务推入队列
     - 返回task_id给前端
     
     Args:
         index: 序号（必填，大于等于1）
+        subfolder: 子文件夹（必填，如 00000）
     """
     # 生成任务ID
     task_id = str(uuid.uuid4())
@@ -56,6 +58,7 @@ async def submit_inference(
     task = Task(
         task_id=task_id,
         index=index,
+        subfolder=subfolder,
         status=TaskStatus.PENDING,
         client_ip=client_info["client_ip"],
         user_agent=client_info["user_agent"]
@@ -66,7 +69,8 @@ async def submit_inference(
     # 将任务推入队列
     enqueued = await task_queue.enqueue({
         "task_id": task_id,
-        "index": index
+        "index": index,
+        "subfolder": subfolder
     })
     
     if not enqueued:
@@ -75,11 +79,12 @@ async def submit_inference(
         await db.commit()
         raise HTTPException(status_code=503, detail="服务繁忙，请稍后重试")
     
-    logger.info(f"任务已创建: {task_id}, 序号: {index}")
+    logger.info(f"任务已创建: {task_id}, 序号: {index}, 子文件夹: {subfolder}")
     
     return {
         "task_id": task_id,
         "index": index,
+        "subfolder": subfolder,
         "message": "任务已创建，正在处理中"
     }
 

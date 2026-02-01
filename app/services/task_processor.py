@@ -18,12 +18,13 @@ async def process_inference_task(task_data: dict):
     处理推理任务
     
     Args:
-        task_data: 任务数据，包含 task_id 和 index
+        task_data: 任务数据，包含 task_id、index 和 subfolder
     """
     task_id = task_data.get("task_id")
     index = task_data.get("index")
+    subfolder = task_data.get("subfolder")
     
-    if not task_id or index is None:
+    if not task_id or index is None or subfolder is None:
         logger.error(f"无效的任务数据: {task_data}")
         return
     
@@ -42,11 +43,11 @@ async def process_inference_task(task_data: dict):
             # 更新状态为处理中
             task.status = TaskStatus.PROCESSING
             await session.commit()
-            logger.info(f"任务状态更新为处理中: {task_id}, 序号: {index}")
+            logger.info(f"任务状态更新为处理中: {task_id}, 序号: {index}, 子文件夹: {subfolder}")
             
             # 执行SSH远程推理
             try:
-                inference_result = await ssh_service.run_inference(index)
+                inference_result = await ssh_service.run_inference(index, subfolder)
                 
                 if not inference_result.get("success"):
                     # 推理失败
