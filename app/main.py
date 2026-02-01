@@ -7,11 +7,10 @@ from loguru import logger
 
 from app.config import settings
 from app.models.database import init_db
-from app.models.log import RequestLog, UserAction  # 确保模型被导入
 from app.api import router
 from app.middleware import LoggingMiddleware
 from app.services.task_queue import task_queue
-from app.services.inference import inference_service
+from app.services.ssh_service import ssh_service
 from app.services.task_processor import process_inference_task
 from app.utils.logger import setup_logger
 
@@ -27,9 +26,12 @@ async def lifespan(app: FastAPI):
     logger.info("初始化数据库...")
     await init_db()
     
-    # 加载AI模型
-    logger.info("加载AI模型...")
-    await inference_service.load_model()
+    # 连接SSH服务器（Mock模式跳过）
+    if settings.MOCK_MODE:
+        logger.info("[MOCK MODE] 跳过SSH连接，使用模拟数据")
+    else:
+        logger.info("连接SSH服务器...")
+        ssh_service.connect()
     
     # 启动任务队列
     logger.info("启动任务队列...")
@@ -45,8 +47,8 @@ async def lifespan(app: FastAPI):
     # 停止任务队列
     await task_queue.stop()
     
-    # 卸载模型
-    inference_service.unload_model()
+    # 断开SSH连接
+    ssh_service.disconnect()
     
     logger.info("应用已关闭")
 
@@ -54,7 +56,7 @@ async def lifespan(app: FastAPI):
 # 创建FastAPI应用
 app = FastAPI(
     title=settings.APP_NAME,
-    description="基于YOLOv5的自动驾驶目标检测AI推理系统",
+    description="自动驾驶大模型推理系统后端API",
     version=settings.APP_VERSION,
     lifespan=lifespan,
     docs_url="/docs",

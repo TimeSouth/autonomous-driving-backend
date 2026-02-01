@@ -12,25 +12,31 @@ class Settings(BaseSettings):
     
     # 路径配置
     BASE_DIR: Path = Path(__file__).resolve().parent.parent
-    UPLOAD_DIR: Path = BASE_DIR / "uploads"
     RESULTS_DIR: Path = BASE_DIR / "results"
     LOGS_DIR: Path = BASE_DIR / "logs"
     
     # 数据库配置
     DATABASE_URL: str = "sqlite+aiosqlite:///./autonomous_driving.db"
     
-    # AI模型配置
-    MODEL_NAME: str = "yolov5s"
-    MODEL_PRETRAINED: bool = True
-    CONFIDENCE_THRESHOLD: float = 0.25
+    # SSH远程服务器配置
+    SSH_HOST: str = "10.112.27.218"
+    SSH_PORT: int = 1234
+    SSH_USER: str = "xcsz"
+    SSH_PASSWORD: str = "123456"
     
-    # 任务队列配置
+    # 远程服务器路径配置
+    REMOTE_WORK_DIR: str = "/home/xcsz/aaai2025"
+    REMOTE_CONDA_ENV: str = "Toponet"
+    REMOTE_SCRIPT: str = "tools/demo/demo.sh"
+    REMOTE_RESULT_DIR: str = "/home/xcsz/aaai2025/work_dirs/lcs/demo/test/vis"
+    
+    # 任务配置
     MAX_QUEUE_SIZE: int = 100
     MAX_WORKERS: int = 2
+    TASK_TIMEOUT: int = 120  # 任务超时时间（秒）
     
-    # 文件上传配置
-    MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
-    ALLOWED_EXTENSIONS: set = {"jpg", "jpeg", "png", "bmp", "webp"}
+    # Mock模式（用于测试，无需连接远程服务器）
+    MOCK_MODE: bool = False
     
     class Config:
         env_file = ".env"
@@ -40,6 +46,5 @@ class Settings(BaseSettings):
 settings = Settings()
 
 # 确保目录存在
-settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 settings.RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 settings.LOGS_DIR.mkdir(parents=True, exist_ok=True)
