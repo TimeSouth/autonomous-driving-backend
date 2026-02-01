@@ -183,13 +183,18 @@ class SSHService:
     
     def list_result_files(self, index: int = None) -> List[str]:
         """
-        列出结果目录中的文件
+        递归列出结果目录中的所有图片文件
         
         Returns:
-            文件名列表
+            文件相对路径列表
         """
-        remote_command = f"ls -1 {settings.REMOTE_RESULT_DIR}/"
-        exit_code, stdout, stderr = self.execute_command(remote_command, timeout=10)
+        # 使用 find 命令递归查找所有图片文件
+        remote_command = (
+            f"find {settings.REMOTE_RESULT_DIR} -type f "
+            f"\\( -name '*.jpg' -o -name '*.jpeg' -o -name '*.png' -o -name '*.bmp' \\) "
+            f"2>/dev/null"
+        )
+        exit_code, stdout, stderr = self.execute_command(remote_command, timeout=30)
         
         if exit_code == 0 and stdout:
             files = [f.strip() for f in stdout.strip().split('\n') if f.strip()]
@@ -202,7 +207,7 @@ class SSHService:
         从远程服务器下载文件
         
         Args:
-            remote_path: 远程文件路径
+            remote_path: 远程文件完整路径
             local_path: 本地保存路径
             
         Returns:
@@ -237,11 +242,15 @@ class SSHService:
             return self._generate_mock_result_image(local_dir, index)
         
         downloaded_files = []
-        files = self.list_result_files(index)
+        # 获取所有图片文件的完整路径
+        remote_files = self.list_result_files(index)
         
-        for filename in files:
-            remote_path = f"{settings.REMOTE_RESULT_DIR}/{filename}"
-            local_path = str(Path(local_dir) / filename)
+        logger.info(f"找到 {len(remote_files)} 个结果文件")
+        
+        for remote_path in remote_files:
+            # 保留相对于结果目录的路径结构
+            relative_path = remote_path.replace(settings.REMOTE_RESULT_DIR + "/", "")
+            local_path = str(Path(local_dir) / relative_path)
             
             if self.download_file(remote_path, local_path):
                 downloaded_files.append(local_path)
