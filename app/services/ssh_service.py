@@ -150,12 +150,12 @@ class SSHService:
         start_time = time.time()
         
         # 构建远程命令
-        remote_command = (
-            f"source ~/.bashrc && "
-            f"conda activate {settings.REMOTE_CONDA_ENV} && "
-            f"cd {settings.REMOTE_WORK_DIR} && "
-            f"bash {settings.REMOTE_SCRIPT} {index}"
-        )
+        # remote_command = (
+        #     f"source ~/.bashrc && "
+        #     f"conda activate {settings.REMOTE_CONDA_ENV} && "
+        #     f"cd {settings.REMOTE_WORK_DIR} && "
+        #     f"bash {settings.REMOTE_SCRIPT} {index}"
+        # )
         
         # 在线程池中执行（避免阻塞事件循环）
         loop = asyncio.get_event_loop()

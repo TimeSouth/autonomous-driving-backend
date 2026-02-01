@@ -58,11 +58,21 @@ async def process_inference_task(task_data: dict):
                     logger.error(f"任务推理失败: {task_id}")
                     return
                 
-                # 下载结果文件到本地
-                local_result_dir = settings.RESULTS_DIR / task_id
-                local_result_dir.mkdir(parents=True, exist_ok=True)
-                
-                downloaded_files = ssh_service.download_results(index, str(local_result_dir))
+                # 本地模式：跳过下载，直接使用本地文件路径
+                if settings.LOCAL_MODE:
+                    # 直接列出本地结果目录中的文件
+                    local_result_dir = Path(settings.LOCAL_RESULT_DIR)
+                    downloaded_files = []
+                    if local_result_dir.exists():
+                        for file_path in local_result_dir.rglob("*"):
+                            if file_path.is_file() and file_path.suffix.lower() in [".jpg", ".jpeg", ".png", ".bmp"]:
+                                downloaded_files.append(str(file_path))
+                    logger.info(f"[LOCAL MODE] 跳过下载，直接使用本地路径，找到 {len(downloaded_files)} 个文件")
+                else:
+                    # 下载结果文件到本地
+                    local_result_dir = settings.RESULTS_DIR / task_id
+                    local_result_dir.mkdir(parents=True, exist_ok=True)
+                    downloaded_files = ssh_service.download_results(index, str(local_result_dir))
                 
                 if not downloaded_files:
                     logger.warning(f"未找到结果文件: {task_id}")

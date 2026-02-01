@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     # Mock模式（用于测试，无需连接远程服务器）
     MOCK_MODE: bool = False
     
+    # 本地模式：前后端部署在同一服务器，跳过文件下载，直接访问本地路径
+    LOCAL_MODE: bool = True
+    # 本地模式下的结果目录（与 REMOTE_RESULT_DIR 相同，因为在同一服务器）
+    LOCAL_RESULT_DIR: str = "/home/xcsz/aaai2025/work_dirs/lcs/demo/test/vis"
+    
     class Config:
         env_file = ".env"
         extra = "ignore"

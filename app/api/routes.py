@@ -133,18 +133,41 @@ async def get_task_result(
     
     # 获取结果文件列表
     result_files = []
-    result_dir = settings.RESULTS_DIR / task_id
     
-    if result_dir.exists():
-        for file_path in result_dir.iterdir():
-            if file_path.is_file():
-                file_ext = file_path.suffix.lower()
-                file_type = "image" if file_ext in [".jpg", ".jpeg", ".png", ".bmp"] else "video" if file_ext in [".mp4", ".avi", ".mov"] else "other"
-                result_files.append({
-                    "filename": file_path.name,
-                    "type": file_type,
-                    "url": f"/api/task/{task_id}/file/{file_path.name}"
-                })
+    # 本地模式：从数据库结果中解析文件列表
+    if settings.LOCAL_MODE:
+        if task.result:
+            try:
+                result_data = json.loads(task.result)
+                files = result_data.get("files", [])
+                for file_path in files:
+                    # 获取相对于 LOCAL_RESULT_DIR 的路径
+                    relative_path = file_path.replace(settings.LOCAL_RESULT_DIR + "/", "")
+                    filename = Path(file_path).name
+                    file_ext = Path(file_path).suffix.lower()
+                    file_type = "image" if file_ext in [".jpg", ".jpeg", ".png", ".bmp"] else "video" if file_ext in [".mp4", ".avi", ".mov"] else "other"
+                    result_files.append({
+                        "filename": filename,
+                        "type": file_type,
+                        "path": file_path,  # 本地绝对路径，前端可直接访问
+                        "url": f"/api/task/{task_id}/file/{relative_path}"  # API访问路径
+                    })
+            except json.JSONDecodeError:
+                pass
+    else:
+        # 远程模式：从本地下载目录获取文件
+        result_dir = settings.RESULTS_DIR / task_id
+        if result_dir.exists():
+            for file_path in result_dir.rglob("*"):  # 递归遍历
+                if file_path.is_file():
+                    file_ext = file_path.suffix.lower()
+                    file_type = "image" if file_ext in [".jpg", ".jpeg", ".png", ".bmp"] else "video" if file_ext in [".mp4", ".avi", ".mov"] else "other"
+                    relative_path = file_path.relative_to(result_dir)
+                    result_files.append({
+                        "filename": file_path.name,
+                        "type": file_type,
+                        "url": f"/api/task/{task_id}/file/{relative_path}"
+                    })
     
     return {
         "task_id": task.task_id,
@@ -153,14 +176,15 @@ async def get_task_result(
         "inference_time": task.inference_time,
         "created_at": task.created_at.isoformat(),
         "completed_at": task.completed_at.isoformat() if task.completed_at else None,
-        "files": result_files
+        "files": result_files,
+        "local_mode": settings.LOCAL_MODE
     }
 
 
-@router.get("/task/{task_id}/file/{filename}", summary="获取结果文件")
+@router.get("/task/{task_id}/file/{file_path:path}", summary="获取结果文件")
 async def get_result_file(
     task_id: str,
-    filename: str,
+    file_path: str,
     db: AsyncSession = Depends(get_db)
 ):
     """获取指定的结果文件（图片或视频）"""
@@ -172,13 +196,17 @@ async def get_result_file(
     if not task:
         raise HTTPException(status_code=404, detail="任务不存在")
     
-    file_path = settings.RESULTS_DIR / task_id / filename
+    # 本地模式：从本地结果目录读取
+    if settings.LOCAL_MODE:
+        full_path = Path(settings.LOCAL_RESULT_DIR) / file_path
+    else:
+        full_path = settings.RESULTS_DIR / task_id / file_path
     
-    if not file_path.exists():
+    if not full_path.exists():
         raise HTTPException(status_code=404, detail="文件不存在")
     
     # 根据扩展名设置媒体类型
-    ext = file_path.suffix.lower()
+    ext = full_path.suffix.lower()
     media_types = {
         ".jpg": "image/jpeg",
         ".jpeg": "image/jpeg",
@@ -191,9 +219,9 @@ async def get_result_file(
     media_type = media_types.get(ext, "application/octet-stream")
     
     return FileResponse(
-        path=str(file_path),
+        path=str(full_path),
         media_type=media_type,
-        filename=filename
+        filename=full_path.name
     )
 
 
