@@ -183,19 +183,30 @@ class SSHService:
             "result_dir": settings.REMOTE_RESULT_DIR
         }
     
-    def list_result_files(self, index: int = None) -> List[str]:
+    def list_result_files(self, subfolder: str = None) -> List[str]:
         """
-        递归列出结果目录中的所有图片文件
+        列出结果目录中的gif文件
+        
+        Args:
+            subfolder: 子文件夹参数，如 "00000"，会查找 sample_00000 目录
         
         Returns:
-            文件相对路径列表
+            文件路径列表
         """
-        # 使用 find 命令递归查找所有图片/动图文件
-        remote_command = (
-            f"find {settings.REMOTE_RESULT_DIR} -type f "
-            f"\\( -name '*.jpg' -o -name '*.jpeg' -o -name '*.png' -o -name '*.bmp' -o -name '*.gif' \\) "
-            f"2>/dev/null"
-        )
+        if subfolder:
+            # 只查找 sample_{subfolder} 目录最外层的 gif 文件（不递归子目录）
+            target_dir = f"{settings.REMOTE_RESULT_DIR}/sample_{subfolder}"
+            remote_command = (
+                f"find {target_dir} -maxdepth 1 -type f -name '*.gif' 2>/dev/null"
+            )
+        else:
+            # 兼容旧逻辑：递归查找所有图片/动图文件
+            remote_command = (
+                f"find {settings.REMOTE_RESULT_DIR} -type f "
+                f"\\( -name '*.jpg' -o -name '*.jpeg' -o -name '*.png' -o -name '*.bmp' -o -name '*.gif' \\) "
+                f"2>/dev/null"
+            )
+        
         exit_code, stdout, stderr = self.execute_command(remote_command, timeout=30)
         
         if exit_code == 0 and stdout:
@@ -228,12 +239,12 @@ class SSHService:
             logger.error(f"文件下载失败: {stderr}")
             return False
     
-    def download_results(self, index: int, local_dir: str) -> List[str]:
+    def download_results(self, subfolder: str, local_dir: str) -> List[str]:
         """
         下载推理结果文件到本地
         
         Args:
-            index: 序号
+            subfolder: 子文件夹参数，如 "00000"
             local_dir: 本地目录
             
         Returns:
@@ -241,11 +252,11 @@ class SSHService:
         """
         # Mock模式：生成模拟图片
         if settings.MOCK_MODE:
-            return self._generate_mock_result_image(local_dir, index)
+            return self._generate_mock_result_image(local_dir, 0)
         
         downloaded_files = []
-        # 获取所有图片文件的完整路径
-        remote_files = self.list_result_files(index)
+        # 获取指定 subfolder 目录最外层的 gif 文件
+        remote_files = self.list_result_files(subfolder)
         
         logger.info(f"找到 {len(remote_files)} 个结果文件")
         

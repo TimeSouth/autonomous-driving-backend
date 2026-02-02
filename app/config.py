@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     # 任务配置
     MAX_QUEUE_SIZE: int = 100
     MAX_WORKERS: int = 2
-    TASK_TIMEOUT: int = 120  # 任务超时时间（秒）
+    TASK_TIMEOUT: int = 600  # 任务超时时间（秒）
     
     # Mock模式（用于测试，无需连接远程服务器）
     MOCK_MODE: bool = False
